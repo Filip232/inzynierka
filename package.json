@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@fawmi/vue-google-maps": "^0.9.67",
+    "@types/plotly.js-dist-min": "^2.3.0",
     "core-js": "^3.8.3",
+    "plotly.js-dist-min": "^2.12.1",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3",
     "vuex": "^4.0.0"
