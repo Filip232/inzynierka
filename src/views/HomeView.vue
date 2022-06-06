@@ -12,26 +12,30 @@
           v-for="point in sample_data"
           :position="point.coordinates"
           :clickable="true"
+          @click="getTensor(point.Exx, point.Eyy, point.Yxy)"
       />
     <!-- </GMapCluster> -->
   </GMapMap>
+  <div id="myDiv" />
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, Ref } from 'vue';
+import Plotly from 'plotly.js-dist-min';
 
 export default defineComponent({
   name: 'HomeView',
   setup() {
+    const tensorData = ref({});
     const sample_data: Ref<{
       fid: string,
       X2000: string,
       Y2000: string,
       v_m: string,
       ALD_m: string,
-      Exx: string,
-      Eyy: string,
-      Yxy: string,
+      Exx: number,
+      Eyy: number,
+      Yxy: number,
       coordinates: {
         lat: number,
         lng: number
@@ -42,6 +46,28 @@ export default defineComponent({
       fetch('http://localhost:3000')
         .then(response => response.json())
         .then(data => {sample_data.value = data; console.log(data)});;
+    }
+
+    const getTensor = (Exx: number, Eyy: number, Yxy: number) => {
+      const tensor: any = {
+        x: [],
+        y: [],
+        type: 'scatter',
+      };
+      for(let i = 0; i < 360; ++i) {
+        const rad = (i*2*Math.PI)/360
+        tensor.x.push(Exx * (Math.cos(rad)*Math.cos(rad)) + 2*Yxy * Math.sin(rad)*Math.cos(rad) + Eyy * Math.sin(rad) * Math.sin(rad));
+        tensor.y.push(Math.sin(rad));
+      }
+      console.log(tensor);
+      tensorData.value = tensor;
+      var layout = {
+        width: 1000,
+        height: 1000
+      };
+      const elo = [];
+      elo.push(tensor)
+      Plotly.newPlot('myDiv', elo, layout);
     }
 
     getSampledata();
@@ -55,7 +81,9 @@ export default defineComponent({
           },
         }
       ],
-      sample_data
+      sample_data,
+      getTensor,
+      tensorData,
     }
   }
 });
