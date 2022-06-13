@@ -1,7 +1,8 @@
 .DS_Store
-node_modules
-/dist
-src/assets/data_sample
+back/node_modules
+front/node_modules
+front/dist
+front/src/assets/data_sample
 
 
 # local env files
