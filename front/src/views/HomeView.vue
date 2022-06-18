@@ -1,64 +1,72 @@
 <template>
-  <form>
-    <label v-text="'Choose file with points'"/>
-    <input type="file" />
-    <label v-text="'Choose coordinate system'"/>
-    <select>
-      <option>Strefa V - EPSG: 2176</option>
-      <option>Strefa VI - EPSG: 2177</option>
-      <option>Strefa VII - EPSG: 2178</option>
-      <option>Strefa VIII - EPSG: 2179</option>
-      <option>WGS 84 - EPSG: 4326</option>
-    </select>
-    <button>Upload file</button>
-  </form>
-  <div :class="$style['map-wrapper']">
-    <GMapMap
-        :center="center"
-        :zoom="15"
-        map-type-id="terrain"
-        style="width: 1000px; height: 800px"
-    >
-      <!-- <GMapCluster> -->
-        <GMapMarker
-            :key="point.fid"
-            v-for="point in sample_data"
-            :position="point.coordinates"
-            :clickable="true"
-            @click="infoWindowOpened = point.fid"
-        >
-          <GMapInfoWindow
-            :class="$style['point-info-window']"
-            :opened="infoWindowOpened === point.fid"
+  <div :class="$styleUtils['flex']">
+    <div :class="[$styleUtils['flex'], $styleUtils['f-col']]">
+      <form :class="$style['settings-panel']">
+        <label v-text="'Choose file with points'"/>
+        <input type="file" />
+        <label v-text="'Choose coordinate system'"/>
+        <select>
+          <option>Strefa V - EPSG: 2176</option>
+          <option>Strefa VI - EPSG: 2177</option>
+          <option>Strefa VII - EPSG: 2178</option>
+          <option>Strefa VIII - EPSG: 2179</option>
+          <option>WGS 84 - EPSG: 4326</option>
+        </select>
+        <button>Upload file</button>
+      </form>
+      <div :class="$style['plot-wrapper']">
+        <div id="myDiv" />
+      </div>
+    </div>
+    <div :class="$style['map-wrapper']">
+      <GMapMap
+          :center="center"
+          :zoom="14"
+          map-type-id="terrain"
+          style="width: 40vw; height: 90vh"
+      >
+        <!-- <GMapCluster> -->
+          <GMapMarker
+              :key="point.fid"
+              v-for="point in sample_data"
+              :position="point.coordinates"
+              :clickable="true"
+              @click="infoWindowOpened = point.fid"
           >
-            <span v-text="`Point fid: ${point.fid}`" />
-            <button type="button"
-              :class="$style['open-plot-btn']"
-              @click="getTensor(point.Exx, point.Eyy, point.Yxy)"
+            <GMapInfoWindow
+              :class="$style['point-info-window']"
+              :opened="infoWindowOpened === point.fid"
             >
-              Open plot
-            </button>
-          </GMapInfoWindow>
-        </GMapMarker>
-      <!-- </GMapCluster> -->
-    </GMapMap>
-  </div>
-  <div v-show="isPlotVisible" :class="$style['plot-wrapper']">
-    <button type="button" :class="$style['close-btn']" @click="isPlotVisible = false"/>
-    <div id="myDiv" />
+              <span v-text="`fid: ${point.fid}`" />
+              <span v-text="`v: ${point.v_m}`" />
+              <span v-text="`ALD: ${point.ALD_m}`" />
+              <span v-text="`Exx: ${point.Exx}`" />
+              <span v-text="`Eyy: ${point.Eyy}`" />
+              <span v-text="`Yxy: ${point.Yxy}`" />
+              <button type="button"
+                :class="$style['open-plot-btn']"
+                @click="getTensor(point.Exx, point.Eyy, point.Yxy)"
+              >
+                Open plot
+              </button>
+            </GMapInfoWindow>
+          </GMapMarker>
+        <!-- </GMapCluster> -->
+      </GMapMap>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, onBeforeUnmount } from 'vue';
+import { defineComponent, ref, Ref } from 'vue';
 import Plotly from 'plotly.js-dist-min';
+import { Layout } from 'plotly.js';
 
 export default defineComponent({
   name: 'HomeView',
   setup() {
     const tensorData = ref({});
     const infoWindowOpened: Ref<string> = ref('')
-    const isPlotVisible = ref(false);
     const sample_data: Ref<{
       fid: string,
       X2000: string,
@@ -137,19 +145,22 @@ export default defineComponent({
 
       const layout = {
         title: 'Tensor plot',
-        width: window.innerHeight,
-        height: window.innerHeight - 100,
+        width: window.innerWidth * 0.35,
+        height: window.innerWidth * 0.35,
         xaxis: {range: [-max - max * 0.05, max + max * 0.05]},
         yaxis: {range: [-max - max * 0.05, max + max * 0.05]},
         showlegend: true,
+        legend: {
+          orientation: "h" as Layout['legend']['orientation']
+        }
       };
 
       const plotData = [];
       
       plotData.push(tensorPlus);
       plotData.push(tensorMinus);
-      isPlotVisible.value = true;
       Plotly.newPlot('myDiv', plotData, layout);
+      infoWindowOpened.value = '';
     }
 
     const getMax = (arr: []) => {
@@ -164,18 +175,6 @@ export default defineComponent({
 
     getSampledata();
 
-    const closeOnEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        isPlotVisible.value = false;
-      }
-    };
-
-    window.addEventListener('keyup', closeOnEsc);
-
-    onBeforeUnmount(() => {
-      window.removeEventListener('keyup', closeOnEsc);
-    });
-
     return {
       center: {lat: 51.590579090167824, lng: 15.9855280937882},
       markers: [
@@ -188,31 +187,20 @@ export default defineComponent({
       sample_data,
       getTensor,
       tensorData,
-      isPlotVisible,
       infoWindowOpened,
-      console
     }
   }
 });
 </script>
 
+<style src="@/assets/styles/utils.module.scss" lang="scss" module="$styleUtils"></style>
+
 <style lang="scss" module>
 .map-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 50px;
-}
-
-.plot-wrapper {
-  display: flex;
-  justify-content: center;
   align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background-color: #fff;
+  width: 50%;
 }
 
 .point-info-window {
@@ -230,36 +218,53 @@ export default defineComponent({
   cursor: pointer;
 }
 
-.close-btn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  height: 30px;
-  width: 30px;
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
+// .close-btn {
+//   position: fixed;
+//   top: 20px;
+//   right: 20px;
+//   height: 30px;
+//   width: 30px;
+//   border: none;
+//   background-color: transparent;
+//   cursor: pointer;
 
-  &::after {
-    position: absolute;
-    content: '';
-    top: -2px;
-    left: 12px;
-    height: 30px;
-    width: 3px;
-    transform: rotate(45deg);
-    background-color: #000;
-  }
+//   &::after {
+//     position: absolute;
+//     content: '';
+//     top: -2px;
+//     left: 12px;
+//     height: 30px;
+//     width: 3px;
+//     transform: rotate(45deg);
+//     background-color: #000;
+//   }
 
-  &::before {
-    position: absolute;
-    content: '';
-    top: -2px;
-    left: 12px;
-    height: 30px;
-    width: 3px;
-    transform: rotate(-45deg);
-    background-color: #000;
-  }
+//   &::before {
+//     position: absolute;
+//     content: '';
+//     top: -2px;
+//     left: 12px;
+//     height: 30px;
+//     width: 3px;
+//     transform: rotate(-45deg);
+//     background-color: #000;
+//   }
+// }
+
+.plot-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 70vh;
+  border: 2px black solid;
+  border-bottom: none;
+  border-left: none;
+}
+
+.settings-panel {
+  height: 25vh;
+  padding: 20px 30px;
+  box-sizing: border-box;
+  border-right: 2px black solid;
 }
 </style>
