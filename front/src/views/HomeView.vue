@@ -1,20 +1,21 @@
 <template>
   <div :class="$styleUtils['flex']">
     <div :class="[$styleUtils['flex'], $styleUtils['f-col']]">
-      <form :class="$style['settings-panel']">
+      <form :class="$style['settings-panel']" @submit.prevent="sendData">
         <label v-text="'Choose file with points'"/>
-        <input type="file" />
+        <input ref="fileInput" type="file" @change="handleFileUpload" />
         <label v-text="'Choose coordinate system'"/>
-        <select>
-          <option>Strefa V - EPSG: 2176</option>
-          <option>Strefa VI - EPSG: 2177</option>
-          <option>Strefa VII - EPSG: 2178</option>
-          <option>Strefa VIII - EPSG: 2179</option>
-          <option>WGS 84 - EPSG: 4326</option>
+        <select v-model="form.coordinateSystem">
+          <option value="2176">Strefa V - EPSG: 2176</option>
+          <option value="2177">Strefa VI - EPSG: 2177</option>
+          <option value="2178">Strefa VII - EPSG: 2178</option>
+          <option value="2179">Strefa VIII - EPSG: 2179</option>
+          <option value="4326">WGS 84 - EPSG: 4326</option>
         </select>
         <button>Upload file</button>
       </form>
       <div :class="$style['plot-wrapper']">
+        <span v-if="!firstPlotGenerated">Choose point and open plot to see result here</span>
         <div id="myDiv" />
       </div>
     </div>
@@ -58,15 +59,17 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref } from 'vue';
+import { defineComponent, InputHTMLAttributes, ref, Ref } from 'vue';
 import Plotly from 'plotly.js-dist-min';
 import { Layout } from 'plotly.js';
+import { file } from '@babel/types';
 
 export default defineComponent({
   name: 'HomeView',
   setup() {
     const tensorData = ref({});
-    const infoWindowOpened: Ref<string> = ref('')
+    const infoWindowOpened: Ref<string> = ref('');
+    const firstPlotGenerated = ref(false);
     const sample_data: Ref<{
       fid: string,
       X2000: string,
@@ -81,11 +84,16 @@ export default defineComponent({
         lng: number
       }
     }[] | []> = ref([]);
+    const form: Ref<{ file: File | undefined, coordinateSystem: string }> = ref({
+      file: undefined,
+      coordinateSystem: 'EPSG:2176'
+    });
+    const fileInput: Ref<undefined | HTMLInputElement> = ref(undefined);
 
     const getSampledata = () => {
       fetch('http://localhost:3000')
         .then(response => response.json())
-        .then(data => {sample_data.value = data; console.log(data)});;
+        .then(data => sample_data.value = data);;
     }
 
     const getTensor = (Exx: number, Eyy: number, Yxy: number) => {
@@ -157,6 +165,8 @@ export default defineComponent({
 
       const plotData = [];
       
+      firstPlotGenerated.value = true;
+
       plotData.push(tensorPlus);
       plotData.push(tensorMinus);
       Plotly.newPlot('myDiv', plotData, layout);
@@ -175,6 +185,10 @@ export default defineComponent({
 
     getSampledata();
 
+    const sendData = () => {
+      console.log(form.value);
+    }
+
     return {
       center: {lat: 51.590579090167824, lng: 15.9855280937882},
       markers: [
@@ -188,6 +202,16 @@ export default defineComponent({
       getTensor,
       tensorData,
       infoWindowOpened,
+      firstPlotGenerated,
+      form,
+      sendData,
+      fileInput,
+      handleFileUpload: () => {
+        if (fileInput.value?.files === null || !fileInput.value?.files.length) return;
+
+        form.value.file = fileInput.value?.files[0];
+        console.log(fileInput.value.files);
+      }
     }
   }
 });

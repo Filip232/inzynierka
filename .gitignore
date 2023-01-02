@@ -1,5 +1,6 @@
 .DS_Store
 back/node_modules
+back/assets
 front/node_modules
 front/dist
 front/src/assets/data_sample
