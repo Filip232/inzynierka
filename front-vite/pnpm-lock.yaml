@@ -15,13 +15,13 @@ specifiers:
 
 dependencies:
   '@googlemaps/markerclusterer': 2.0.14
-  '@types/plotly.js-dist-min': 2.3.1
   google-maps: 4.3.3
   plotly.js-dist-min: 2.17.0
   vue: 3.2.45
 
 devDependencies:
   '@types/google.maps': 3.51.0
+  '@types/plotly.js-dist-min': 2.3.1
   '@vitejs/plugin-vue': 4.0.0_vite@4.0.3+vue@3.2.45
   sass: 1.57.1
   typescript: 4.9.4
@@ -271,11 +271,11 @@ packages:
     resolution: {integrity: sha512-9+rTvlyKDclIB9twal6ou6unUN6iTATLcRvakoFYaHGPnVRNe06LbUGOcgD8O+sddBFz3y2kS2hTKbUPGeVsHA==}
     dependencies:
       '@types/plotly.js': 2.12.11
-    dev: false
+    dev: true
 
   /@types/plotly.js/2.12.11:
     resolution: {integrity: sha512-FouDGLsFVFTBqedZSUK4LjPYm1HYRJeGfIideEhgsUu4htNmLGsVbbH7SUaCljYKbiZkeCCWinvVYJe8o3m6og==}
-    dev: false
+    dev: true
 
   /@vitejs/plugin-vue/4.0.0_vite@4.0.3+vue@3.2.45:
     resolution: {integrity: sha512-e0X4jErIxAB5oLtDqbHvHpJe/uWNkdpYV83AOG2xo2tEVSzCzewgJMtREZM30wXnM5ls90hxiOtAuVU6H5JgbA==}

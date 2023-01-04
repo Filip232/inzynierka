@@ -2,16 +2,20 @@
   <div :class="$styleUtils['flex']">
     <div :class="[$styleUtils['flex'], $styleUtils['f-col']]">
       <form ref="formElement" :class="$style['settings-panel']" @submit.prevent="sendData">
-        <label v-text="'Choose file with points'"/>
-        <input ref="fileInput" type="file" />
-        <label v-text="'Choose coordinate system'"/>
-        <select v-model="form.coordinateSystem" @change="loguj">
-          <option value="2176">Strefa V - EPSG: 2176</option>
-          <option value="2177">Strefa VI - EPSG: 2177</option>
-          <option value="2178">Strefa VII - EPSG: 2178</option>
-          <option value="2179">Strefa VIII - EPSG: 2179</option>
-          <option value="4326">WGS 84 - EPSG: 4326</option>
-        </select>
+        <label>
+          Choose file with points
+          <input ref="fileInput" type="file" />
+        </label>
+        <label>
+          Choose coordinate system
+          <select v-model="form.coordinateSystem">
+            <option value="2176">Strefa V - EPSG: 2176</option>
+            <option value="2177">Strefa VI - EPSG: 2177</option>
+            <option value="2178">Strefa VII - EPSG: 2178</option>
+            <option value="2179">Strefa VIII - EPSG: 2179</option>
+            <option value="4326">WGS 84 - EPSG: 4326</option>
+          </select>
+        </label>
         <button>Upload file</button>
       </form>
       <div :class="$style['plot-wrapper']">
@@ -187,8 +191,6 @@ export default defineComponent({
       .then(() => {
         const markers: Marker[] = [];
         sample_data.value.forEach(el => {
-          console.log(typeof el.coordinates.lat);
-          console.log(typeof el.coordinates.lng);
           const marker = new google.maps.Marker({
             position: el.coordinates,
           })
@@ -209,8 +211,6 @@ export default defineComponent({
         markerClusterer?.addMarkers(markers);
       })
       .then(() => {
-        // addData(fileInput.value?.files[0].name)
-        console.log(fileInput.value);
         formElement.value?.reset();
       })
     }
@@ -230,38 +230,6 @@ export default defineComponent({
       });
       markerClusterer = new MarkerClusterer({ map });
     });
-
-    const getData = (fileName: String | undefined) => {
-      fetch(`http://localhost:3000?filename=${fileName}`)
-        .then(response => response.json())
-        .then(data => {
-          sample_data.value = data
-          console.log(data);
-        })
-        .then(() => {
-          const markers: Marker[] = [];
-          sample_data.value.forEach(el => {
-
-            const marker = new google.maps.Marker({
-              position: el.coordinates,
-            })
-            marker.addListener('click', () => {
-              infoWindow.setContent(`
-                <span>fid: ${el.fid}</span><br>
-                <span>v: ${el.v_m}</span><br>
-                <span>ALD: ${el.ALD_m}</span><br>
-                <span>Exx: ${el.Exx}</span><br>
-                <span>Eyy: ${el.Eyy}</span><br>
-                <span>Yxy: ${el.Yxy}</span><br>
-              `);
-              infoWindow.open(map, marker);
-              getTensor(el.Exx, el.Eyy, el.Yxy);
-            });
-            markers.push(marker);
-          });
-          markerClusterer?.addMarkers(markers);
-      });
-    }
 
     return {
       sample_data,
@@ -316,7 +284,12 @@ export default defineComponent({
 }
 
 .settings-panel {
+  display: flex;
+  flex-flow: column;
+  justify-content: space-between;
+  align-items: center;
   height: 25vh;
+  width: 45vw;
   padding: 20px 30px;
   box-sizing: border-box;
   border-right: 2px black solid;

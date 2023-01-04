@@ -2,8 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 const bodyParser = require('body-parser');
-const fs = require('fs');
-const parseToJson = require('./parseToJson.js');
 const proj4 = require('proj4');
 
 const app = express();
@@ -24,59 +22,38 @@ const projections = {
   '4326': '+proj=longlat +datum=WGS84 +no_defs',
 };
 
-const myFunc = (path, cb) => {
-  fs.readFile(path, 'utf8', function(err, data){
-    if(err) throw err;
-    cb(data);
-  });
-};
-
 app.get('/', (req, res) => {
   const data = require(`./parsed/${req.query.filename.slice(0, -4)}.json`);
   return res.send(data);
 });
 
 app.post('/', async (req, res) => {
-  const file = req.files.files;
-  const filePath = './uploads/' + file.name;
-  await fs.writeFile(filePath, file.data, err => {
-    if (err) return console.log(err);
-  });
-  
-  console.log(req.body.coordinateSystem);
-
-  // const data = await parseToJson(filePath, file.name, String(req.body.coordinateSystem));
-  // console.log(data);
-  
-  myFunc(filePath, data => {
-    const file = data.split('\n');
-    const ready = [];
-    file.forEach(el => ready.push(el.replace('\r', '').split('\t')));
-    const siema = ready.flat();
-    const wynik = [];
-    for(let i = 8; i < siema.length; i += 8) {
-      if(!siema[i]) continue;
-      wynik.push({
-        fid: siema[i],
-        X2000: siema[i+1],
-        Y2000: siema[i+2],
-        v_m: siema[i+3],
-        ALD_m: siema[i+4],
-        Exx: parseFloat(siema[i+5].replace(',', '.')),
-        Eyy: parseFloat(siema[i+6].replace(',', '.')),
-        Yxy: parseFloat(siema[i+7].replace(',', '.')),
-      });
-    }
-    wynik.forEach(el => {
-      const cords = proj4('EPSG:4326', projections[String(req.body.coordinateSystem)], [parseFloat(el.X2000), parseFloat(el.Y2000)]);
-      el.coordinates = { lat: cords[1], lng: cords[0] }
+  const fileRaw = req.files.files;
+  const file = fileRaw.data.toString('utf8').split('\n');
+  const ready = [];
+  file.forEach(el => ready.push(el.replace('\r', '').split('\t')));
+  const parsedFile = ready.flat();
+  const result = [];
+  for(let i = 8; i < parsedFile.length; i += 8) {
+    if(!parsedFile[i]) continue;
+    result.push({
+      fid: parsedFile[i],
+      X2000: parsedFile[i+1],
+      Y2000: parsedFile[i+2],
+      v_m: parsedFile[i+3],
+      ALD_m: parsedFile[i+4],
+      Exx: parseFloat(parsedFile[i+5].replace(',', '.')),
+      Eyy: parseFloat(parsedFile[i+6].replace(',', '.')),
+      Yxy: parseFloat(parsedFile[i+7].replace(',', '.')),
     });
-  
-    return res.status(200).send(JSON.stringify(wynik));
+  }
+  result.forEach(el => {
+    const cords = proj4(projections[String(req.body.coordinateSystem)], 'EPSG:4326', [parseFloat(el.X2000), parseFloat(el.Y2000)]);
+    el.coordinates = { lat: cords[1], lng: cords[0] };
   });
-  
-  // return res.status(200).send('File uploaded');
-})
+
+  return res.status(200).send(JSON.stringify(result));
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
